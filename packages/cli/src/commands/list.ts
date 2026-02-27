@@ -2,8 +2,8 @@ import { buildCommand } from "@stricli/core";
 import { ZendeskClient, resolveConfig } from "@zendesk-toolkit/sdk";
 
 interface ListFlags {
-  readonly page: number;
-  readonly limit: number;
+  readonly page: string;
+  readonly limit: string;
   readonly json: boolean;
 }
 
@@ -15,15 +15,15 @@ export const listCommand = buildCommand({
     flags: {
       page: {
         kind: "parsed",
-        parse: Number,
+        parse: (value: string) => value,
         brief: "Page number",
-        default: 1,
+        default: "1",
       },
       limit: {
         kind: "parsed",
-        parse: Number,
+        parse: (value: string) => value,
         brief: "Items per page",
-        default: 20,
+        default: "20",
       },
       json: {
         kind: "boolean",
@@ -37,9 +37,11 @@ export const listCommand = buildCommand({
     const client = new ZendeskClient(config);
 
     try {
+      const page = Number(flags.page);
+      const limit = Number(flags.limit);
       const result = await client.listResources({
-        page: flags.page,
-        limit: flags.limit,
+        page,
+        limit,
       });
 
       if (flags.json) {

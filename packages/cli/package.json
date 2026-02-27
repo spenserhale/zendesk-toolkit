@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "bun run src/bin.ts",
     "build": "bun build ./src/bin.ts --outdir ./dist --target node",
+    "debug": "bun run src/bin.ts -- tickets thread 387113",
     "test": "bun test",
     "lint": "tsc --noEmit"
   },

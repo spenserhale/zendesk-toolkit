@@ -7,7 +7,7 @@ interface GetFlags {
 
 export const getCommand = buildCommand({
   docs: {
-    brief: "Get a resource by ID",
+    brief: "Get ticket details by ID",
   },
   parameters: {
     flags: {
@@ -21,7 +21,7 @@ export const getCommand = buildCommand({
       kind: "tuple",
       parameters: [
         {
-          brief: "Resource ID",
+          brief: "Ticket ID",
           parse: String,
         },
       ],
@@ -32,17 +32,31 @@ export const getCommand = buildCommand({
     const client = new ZendeskClient(config);
 
     try {
-      const resource = await client.getResource(id);
+      const ticket = await client.getTicket(id);
 
       if (flags.json) {
-        console.log(JSON.stringify(resource, null, 2));
+        console.log(JSON.stringify(ticket, null, 2));
         return;
       }
 
-      console.log(`ID:        ${resource.id}`);
-      console.log(`Name:      ${resource.name}`);
-      console.log(`Created:   ${resource.createdAt}`);
-      console.log(`Updated:   ${resource.updatedAt}`);
+      console.log(`Ticket #${ticket.id}`);
+      console.log(`Subject:     ${ticket.subject ?? "(no subject)"}`);
+      console.log(`Status:      ${ticket.status}`);
+      console.log(`Priority:    ${ticket.priority ?? "(none)"}`);
+      console.log(`Type:        ${ticket.type ?? "(none)"}`);
+      console.log(`Requester:   ${ticket.requester_id ?? "(unknown)"}`);
+      console.log(`Assignee:    ${ticket.assignee_id ?? "(unassigned)"}`);
+      console.log(`Created:     ${ticket.created_at}`);
+      console.log(`Updated:     ${ticket.updated_at}`);
+
+      if (ticket.tags && ticket.tags.length > 0) {
+        console.log(`Tags:        ${ticket.tags.join(", ")}`);
+      }
+
+      if (ticket.description) {
+        console.log("\nDescription:");
+        console.log(ticket.description);
+      }
     } catch (err) {
       console.error(`Error: ${err instanceof Error ? err.message : err}`);
       process.exit(1);

@@ -28,6 +28,26 @@ bun run dev:cli -- --help
 bun run dev:mcp
 ```
 
+Set these environment variables before running ticket commands:
+
+```bash
+# Either OAuth token OR Zendesk API token credentials:
+# OAuth: "your-oauth-access-token"
+# API token: "you@example.com/token:your_api_token"
+export ZENDESK_API_KEY=you@example.com/token:your_api_token
+export ZENDESK_BASE_URL=https://your-subdomain.zendesk.com
+```
+
+Ticket CLI commands:
+
+```bash
+# Print main ticket details
+bun run dev:cli -- tickets get 12345
+
+# Print full ticket thread (all comments)
+bun run dev:cli -- tickets thread 12345
+```
+
 ## Architecture
 
 ```

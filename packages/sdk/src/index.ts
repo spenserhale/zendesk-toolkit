@@ -8,6 +8,11 @@ export type {
   CreateResourceParams,
   PaginatedResponse,
   ErrorResponse,
+  Ticket,
+  TicketComment,
+  ZendeskUser,
+  ShowTicketResponse,
+  ListTicketCommentsResponse,
 } from "./types.js";
 export {
   ZendeskConfigSchema,
@@ -15,4 +20,9 @@ export {
   ListResourcesParamsSchema,
   CreateResourceParamsSchema,
   ErrorResponseSchema,
+  TicketSchema,
+  TicketCommentSchema,
+  ZendeskUserSchema,
+  ShowTicketResponseSchema,
+  ListTicketCommentsResponseSchema,
 } from "./types.js";
