@@ -36,6 +36,8 @@ Set these environment variables before running ticket commands:
 # API token: "you@example.com/token:your_api_token"
 export ZENDESK_API_KEY=you@example.com/token:your_api_token
 export ZENDESK_BASE_URL=https://your-subdomain.zendesk.com
+# Optional when running from a different working directory:
+export ZENDESK_DOTENV_PATH=/Users/spenser/Code/Toolkits/zendesk-toolkit/.env
 ```
 
 Ticket CLI commands:

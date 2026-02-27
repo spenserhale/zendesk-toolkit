@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { ZendeskConfig } from "./types.js";
 
 function parseEnvValue(line: string): [string, string] | null {
@@ -22,26 +23,55 @@ function parseEnvValue(line: string): [string, string] | null {
   return [key, value];
 }
 
+function getValueFromDotenvFile(
+  filePath: string,
+  key: string
+): string | undefined {
+  if (!existsSync(filePath)) return undefined;
+
+  const lines = readFileSync(filePath, "utf8").split(/\r?\n/);
+  for (const line of lines) {
+    const parsed = parseEnvValue(line);
+    if (parsed && parsed[0] === key) {
+      return parsed[1];
+    }
+  }
+
+  return undefined;
+}
+
 function getEnvValueFromNearestDotenv(key: string): string | undefined {
-  let dir = process.cwd();
+  const explicitDotenvPath = process.env.ZENDESK_DOTENV_PATH?.trim();
+  if (explicitDotenvPath) {
+    const explicitValue = getValueFromDotenvFile(explicitDotenvPath, key);
+    if (explicitValue !== undefined) {
+      return explicitValue;
+    }
+  }
 
-  while (true) {
-    for (const fileName of [".env.local", ".env"]) {
-      const filePath = join(dir, fileName);
-      if (!existsSync(filePath)) continue;
+  const moduleDir = dirname(fileURLToPath(import.meta.url));
+  const startDirs = [process.cwd(), moduleDir];
+  const visitedDirs = new Set<string>();
 
-      const lines = readFileSync(filePath, "utf8").split(/\r?\n/);
-      for (const line of lines) {
-        const parsed = parseEnvValue(line);
-        if (parsed && parsed[0] === key) {
-          return parsed[1];
+  for (const startDir of startDirs) {
+    let dir = startDir;
+
+    while (true) {
+      if (!visitedDirs.has(dir)) {
+        visitedDirs.add(dir);
+
+        for (const fileName of [".env.local", ".env"]) {
+          const value = getValueFromDotenvFile(join(dir, fileName), key);
+          if (value !== undefined) {
+            return value;
+          }
         }
       }
-    }
 
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
+      const parent = dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
   }
 
   return undefined;

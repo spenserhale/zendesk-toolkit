@@ -24,7 +24,9 @@ Add this to your Claude Desktop config (`~/Library/Application Support/Claude/cl
       "command": "bun",
       "args": ["run", "/Users/spenser/Code/Toolkits/zendesk-toolkit/packages/mcp/src/index.ts"],
       "env": {
-        "ZENDESK_API_KEY": "your-api-key-here"
+        "ZENDESK_API_KEY": "you@example.com/token:your_api_token",
+        "ZENDESK_BASE_URL": "https://your-subdomain.zendesk.com",
+        "ZENDESK_DOTENV_PATH": "/Users/spenser/Code/Toolkits/zendesk-toolkit/.env"
       }
     }
   }
