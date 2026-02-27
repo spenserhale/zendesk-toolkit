@@ -1,10 +1,32 @@
+import { encode } from "@toon-format/toon";
 import type { FastMCP } from "fastmcp";
 import { z } from "zod";
+import type { TicketComment } from "@zendesk-toolkit/sdk";
 import { ZendeskClient, resolveConfig } from "@zendesk-toolkit/sdk";
+
+const outputFormatSchema = z.enum(["json", "toon"]);
+type OutputFormat = z.infer<typeof outputFormatSchema>;
 
 function getClient(): ZendeskClient {
   const config = resolveConfig();
   return new ZendeskClient(config);
+}
+
+function render(data: unknown, format: OutputFormat): string {
+  if (format === "toon") {
+    return encode(data, { keyFolding: "safe" });
+  }
+
+  return JSON.stringify(data, null, 2);
+}
+
+function getCommentBody(comment: TicketComment): string {
+  return (
+    comment.plain_body ??
+    comment.body ??
+    comment.html_body ??
+    "(comment body unavailable)"
+  );
 }
 
 export function registerResourceTools(server: FastMCP) {
@@ -68,6 +90,79 @@ export function registerResourceTools(server: FastMCP) {
       const client = getClient();
       await client.deleteResource(args.id);
       return `Successfully deleted resource ${args.id}`;
+    },
+  });
+
+  server.addTool({
+    name: "get_ticket",
+    description: "Get the main details for a Zendesk ticket by ID",
+    parameters: z.object({
+      id: z.string().describe("The ticket ID"),
+      format: outputFormatSchema
+        .default("json")
+        .describe("Output format: json or toon"),
+    }),
+    execute: async (args) => {
+      const client = getClient();
+      const ticket = await client.getTicket(args.id);
+
+      const ticketDetails = {
+        id: ticket.id,
+        subject: ticket.subject ?? null,
+        status: ticket.status,
+        priority: ticket.priority ?? null,
+        type: ticket.type ?? null,
+        requester_id: ticket.requester_id ?? null,
+        assignee_id: ticket.assignee_id ?? null,
+        created_at: ticket.created_at,
+        updated_at: ticket.updated_at,
+        tags: ticket.tags ?? [],
+        description: ticket.description ?? null,
+      };
+
+      return render(ticketDetails, args.format);
+    },
+  });
+
+  server.addTool({
+    name: "get_ticket_comments",
+    description: "Get all comments for a ticket, including ticket summary details",
+    parameters: z.object({
+      id: z.string().describe("The ticket ID"),
+      format: outputFormatSchema
+        .default("toon")
+        .describe("Output format: json or toon"),
+    }),
+    execute: async (args) => {
+      const client = getClient();
+      const [ticket, comments] = await Promise.all([
+        client.getTicket(args.id),
+        client.getTicketComments(args.id),
+      ]);
+
+      const payload = {
+        ticket: {
+          id: ticket.id,
+          subject: ticket.subject ?? null,
+          status: ticket.status,
+          priority: ticket.priority ?? null,
+          type: ticket.type ?? null,
+          requester_id: ticket.requester_id ?? null,
+          assignee_id: ticket.assignee_id ?? null,
+          created_at: ticket.created_at,
+          updated_at: ticket.updated_at,
+        },
+        comment_count: comments.length,
+        comments: comments.map((comment) => ({
+          id: comment.id,
+          created_at: comment.created_at,
+          author_id: comment.author_id,
+          visibility: comment.public === false ? "internal" : "public",
+          body: getCommentBody(comment),
+        })),
+      };
+
+      return render(payload, args.format);
     },
   });
 }

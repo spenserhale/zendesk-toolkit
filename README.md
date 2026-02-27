@@ -44,8 +44,11 @@ Ticket CLI commands:
 # Print main ticket details
 bun run dev:cli -- tickets get 12345
 
-# Print full ticket thread (all comments)
-bun run dev:cli -- tickets thread 12345
+# Print all ticket comments
+bun run dev:cli -- tickets comments 12345
+
+# Optional: output JSON instead of TOON
+bun run dev:cli -- tickets comments --json 12345
 ```
 
 ## Architecture

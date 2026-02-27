@@ -1,3 +1,4 @@
+import { encode } from "@toon-format/toon";
 import { buildCommand } from "@stricli/core";
 import { ZendeskClient, resolveConfig } from "@zendesk-toolkit/sdk";
 
@@ -33,30 +34,26 @@ export const getCommand = buildCommand({
 
     try {
       const ticket = await client.getTicket(id);
+      const ticketDetails = {
+        id: ticket.id,
+        subject: ticket.subject ?? null,
+        status: ticket.status,
+        priority: ticket.priority ?? null,
+        type: ticket.type ?? null,
+        requester_id: ticket.requester_id ?? null,
+        assignee_id: ticket.assignee_id ?? null,
+        created_at: ticket.created_at,
+        updated_at: ticket.updated_at,
+        tags: ticket.tags ?? [],
+        description: ticket.description ?? null,
+      };
 
       if (flags.json) {
-        console.log(JSON.stringify(ticket, null, 2));
+        console.log(JSON.stringify(ticketDetails, null, 2));
         return;
       }
 
-      console.log(`Ticket #${ticket.id}`);
-      console.log(`Subject:     ${ticket.subject ?? "(no subject)"}`);
-      console.log(`Status:      ${ticket.status}`);
-      console.log(`Priority:    ${ticket.priority ?? "(none)"}`);
-      console.log(`Type:        ${ticket.type ?? "(none)"}`);
-      console.log(`Requester:   ${ticket.requester_id ?? "(unknown)"}`);
-      console.log(`Assignee:    ${ticket.assignee_id ?? "(unassigned)"}`);
-      console.log(`Created:     ${ticket.created_at}`);
-      console.log(`Updated:     ${ticket.updated_at}`);
-
-      if (ticket.tags && ticket.tags.length > 0) {
-        console.log(`Tags:        ${ticket.tags.join(", ")}`);
-      }
-
-      if (ticket.description) {
-        console.log("\nDescription:");
-        console.log(ticket.description);
-      }
+      console.log(encode(ticketDetails, { keyFolding: "safe" }));
     } catch (err) {
       console.error(`Error: ${err instanceof Error ? err.message : err}`);
       process.exit(1);

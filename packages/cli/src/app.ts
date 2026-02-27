@@ -1,14 +1,14 @@
 import { buildApplication, buildRouteMap } from "@stricli/core";
 import { getCommand } from "./commands/get.js";
-import { threadCommand } from "./commands/thread.js";
+import { commentsCommand } from "./commands/comments.js";
 
 const ticketRoutes = buildRouteMap({
   routes: {
     get: getCommand,
-    thread: threadCommand,
+    comments: commentsCommand,
   },
   docs: {
-    brief: "Read Zendesk tickets and ticket threads",
+    brief: "Read Zendesk tickets and ticket comments",
   },
 });
 

@@ -10,6 +10,8 @@ MCP server for Zendesk, built with [FastMCP](https://github.com/punkpeye/fastmcp
 | `get_resource` | Get a resource by ID |
 | `create_resource` | Create a new resource |
 | `delete_resource` | Delete a resource |
+| `get_ticket` | Get main ticket details by ticket ID (`format`: `json`/`toon`) |
+| `get_ticket_comments` | Get full ticket comments (`format`: `json`/`toon`, default `toon`) |
 
 ## Setup with Claude Desktop
 
