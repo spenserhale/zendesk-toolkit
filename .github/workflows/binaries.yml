@@ -1,0 +1,45 @@
+name: Binaries
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to attach binaries to (for example v0.1.0)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: bun-linux-x64, asset: zendesk-linux-x64 }
+          - { target: bun-linux-arm64, asset: zendesk-linux-arm64 }
+          - { target: bun-darwin-x64, asset: zendesk-darwin-x64 }
+          - { target: bun-darwin-arm64, asset: zendesk-darwin-arm64 }
+          - { target: bun-windows-x64, asset: zendesk-windows-x64.exe }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Compile binary
+        working-directory: packages/cli
+        run: bun build ./src/bin.ts --compile --minify --target=${{ matrix.target }} --outfile ./dist/${{ matrix.asset }}
+      - name: Generate checksum
+        working-directory: packages/cli/dist
+        run: shasum -a 256 ${{ matrix.asset }} > ${{ matrix.asset }}.sha256
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name || inputs.tag }}
+          files: |
+            packages/cli/dist/${{ matrix.asset }}
+            packages/cli/dist/${{ matrix.asset }}.sha256
+          fail_on_unmatched_files: true

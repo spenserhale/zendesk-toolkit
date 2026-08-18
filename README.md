@@ -4,6 +4,25 @@ Zendesk integration tools
 
 A monorepo containing the SDK, CLI, and MCP server for the Zendesk API.
 
+## Install the CLI
+
+Install the latest standalone binary for macOS or Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/spenserhale/zendesk-toolkit/main/scripts/install.sh | sh
+```
+
+The installer verifies the SHA256 checksum and installs `zendesk` to
+`$HOME/.local/bin`. Set `ZENDESK_TOOLKIT_VERSION=v0.1.0` to pin a release or
+`ZENDESK_TOOLKIT_INSTALL=$HOME/bin` to use another directory.
+
+Update a standalone install at any time:
+
+```sh
+zendesk upgrade
+zendesk upgrade --check
+```
+
 ## Packages
 
 | Package | Description |

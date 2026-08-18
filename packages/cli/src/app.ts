@@ -1,6 +1,8 @@
 import { buildApplication, buildRouteMap } from "@stricli/core";
+import pkg from "../package.json" with { type: "json" };
 import { getCommand } from "./commands/get.js";
 import { commentsCommand } from "./commands/comments.js";
+import { upgradeCommand } from "./commands/upgrade.js";
 
 const ticketRoutes = buildRouteMap({
   routes: {
@@ -15,6 +17,7 @@ const ticketRoutes = buildRouteMap({
 const routes = buildRouteMap({
   routes: {
     tickets: ticketRoutes,
+    upgrade: upgradeCommand,
   },
   docs: {
     brief: "Zendesk integration tools",
@@ -24,6 +27,6 @@ const routes = buildRouteMap({
 export const app = buildApplication(routes, {
   name: "zendesk",
   versionInfo: {
-    currentVersion: "0.1.0",
+    currentVersion: pkg.version,
   },
 });
