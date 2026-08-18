@@ -12,6 +12,8 @@ MCP server for Zendesk, built with [FastMCP](https://github.com/punkpeye/fastmcp
 | `delete_resource` | Delete a resource |
 | `get_ticket` | Get main ticket details by ticket ID (`format`: `json`/`toon`) |
 | `get_ticket_comments` | Get full ticket comments (`format`: `json`/`toon`, default `toon`) |
+| `list_tickets` | List tickets newest-updated-first, one bounded page (`limit`, `cursor`, `sort_by`, `sort_order`) |
+| `search_tickets` | Search tickets with Zendesk search syntax (`query`, `limit`, `page`, `sort_by`, `sort_order`) |
 
 ## Setup with Claude Desktop
 

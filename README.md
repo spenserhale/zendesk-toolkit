@@ -62,6 +62,14 @@ export ZENDESK_DOTENV_PATH=/Users/spenser/Code/Toolkits/zendesk-toolkit/.env
 Ticket CLI commands:
 
 ```bash
+# List tickets, most recently updated first (bounded page, cursor to continue)
+bun run dev:cli -- tickets list --limit 25
+bun run dev:cli -- tickets list --cursor "<next_cursor from the previous page>"
+
+# Search with Zendesk search syntax (scoped to type:ticket automatically)
+bun run dev:cli -- tickets search "status:open priority:urgent"
+bun run dev:cli -- tickets search "printer jam" --sort created_at --page 2
+
 # Print main ticket details
 bun run dev:cli -- tickets get 12345
 
@@ -71,6 +79,10 @@ bun run dev:cli -- tickets comments 12345
 # Optional: output JSON instead of TOON
 bun run dev:cli -- tickets comments --json 12345
 ```
+
+`list` and `search` return bounded pages (default 25, max `--limit 100`) of ticket
+summaries. When more results exist, the output carries `has_more` plus a `hint`
+naming the flag to use next — `--cursor` for `list`, `--page` for `search`.
 
 ## Architecture
 

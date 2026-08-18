@@ -2,7 +2,14 @@ import { encode } from "@toon-format/toon";
 import type { FastMCP } from "fastmcp";
 import { z } from "zod";
 import type { TicketComment } from "@zendesk-toolkit/sdk";
-import { ZendeskClient, resolveConfig } from "@zendesk-toolkit/sdk";
+import {
+  SORT_ORDERS,
+  TICKET_LIST_SORT_FIELDS,
+  TICKET_SEARCH_SORT_FIELDS,
+  ZendeskClient,
+  resolveConfig,
+  summarizeTicket,
+} from "@zendesk-toolkit/sdk";
 
 const outputFormatSchema = z.enum(["json", "toon"]);
 type OutputFormat = z.infer<typeof outputFormatSchema>;
@@ -163,6 +170,104 @@ export function registerResourceTools(server: FastMCP) {
       };
 
       return render(payload, args.format);
+    },
+  });
+
+  server.addTool({
+    name: "list_tickets",
+    description: "List tickets, newest updated first, one bounded page at a time",
+    parameters: z.object({
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .default(25)
+        .describe("Tickets per page"),
+      cursor: z
+        .string()
+        .optional()
+        .describe("next_cursor from a previous call"),
+      sort_by: z.enum(TICKET_LIST_SORT_FIELDS).default("updated_at"),
+      sort_order: z.enum(SORT_ORDERS).default("desc"),
+      format: outputFormatSchema
+        .default("toon")
+        .describe("Output format: json or toon"),
+    }),
+    execute: async (args) => {
+      const client = getClient();
+      const result = await client.listTickets({
+        limit: args.limit,
+        cursor: args.cursor,
+        sortBy: args.sort_by,
+        sortOrder: args.sort_order,
+      });
+
+      return render(
+        {
+          ticket_count: result.tickets.length,
+          has_more: result.has_more,
+          next_cursor: result.next_cursor,
+          ...(result.has_more
+            ? { hint: "pass next_cursor as cursor to fetch the following page" }
+            : {}),
+          tickets: result.tickets.map(summarizeTicket),
+        },
+        args.format
+      );
+    },
+  });
+
+  server.addTool({
+    name: "search_tickets",
+    description:
+      "Search tickets with Zendesk search syntax (e.g. status:open priority:urgent)",
+    parameters: z.object({
+      query: z
+        .string()
+        .min(1)
+        .describe("Zendesk search query; scoped to type:ticket automatically"),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .default(25)
+        .describe("Results per page"),
+      page: z.number().int().min(1).max(1000).default(1),
+      sort_by: z.enum(TICKET_SEARCH_SORT_FIELDS).default("relevance"),
+      sort_order: z.enum(SORT_ORDERS).default("desc"),
+      format: outputFormatSchema
+        .default("toon")
+        .describe("Output format: json or toon"),
+    }),
+    execute: async (args) => {
+      const client = getClient();
+      const result = await client.searchTickets({
+        query: args.query,
+        limit: args.limit,
+        page: args.page,
+        sortBy: args.sort_by,
+        sortOrder: args.sort_order,
+      });
+
+      return render(
+        {
+          query: result.query,
+          total_count: result.count,
+          page: result.page,
+          ticket_count: result.tickets.length,
+          has_more: result.has_more,
+          next_page: result.next_page,
+          ...(result.has_more
+            ? {
+                hint: "request next_page for more, or narrow the query to cut result volume",
+              }
+            : {}),
+          tickets: result.tickets.map(summarizeTicket),
+        },
+        args.format
+      );
     },
   });
 }

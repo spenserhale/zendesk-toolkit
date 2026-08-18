@@ -135,3 +135,109 @@ export const ErrorResponseSchema = z.object({
 });
 
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Ticket list / search schemas
+// ---------------------------------------------------------------------------
+
+export const TICKET_LIST_SORT_FIELDS = [
+  "created_at",
+  "updated_at",
+  "id",
+  "status",
+  "subject",
+] as const;
+
+export const TICKET_SEARCH_SORT_FIELDS = [
+  "relevance",
+  "created_at",
+  "updated_at",
+  "priority",
+  "status",
+] as const;
+
+export const SORT_ORDERS = ["asc", "desc"] as const;
+
+export const SortOrderSchema = z.enum(SORT_ORDERS);
+
+export type SortOrder = z.infer<typeof SortOrderSchema>;
+
+export const ListTicketsParamsSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(25),
+  cursor: z.string().min(1).optional(),
+  sortBy: z.enum(TICKET_LIST_SORT_FIELDS).default("updated_at"),
+  sortOrder: SortOrderSchema.default("desc"),
+});
+
+export type ListTicketsParams = z.input<typeof ListTicketsParamsSchema>;
+
+export const SearchTicketsParamsSchema = z.object({
+  query: z.string().trim().min(1, "Search query is required"),
+  limit: z.number().int().min(1).max(100).default(25),
+  page: z.number().int().min(1).default(1),
+  sortBy: z.enum(TICKET_SEARCH_SORT_FIELDS).default("relevance"),
+  sortOrder: SortOrderSchema.default("desc"),
+});
+
+export type SearchTicketsParams = z.input<typeof SearchTicketsParamsSchema>;
+
+export const ListTicketsResponseSchema = z
+  .object({
+    tickets: z.array(TicketSchema),
+    meta: z
+      .object({
+        has_more: z.boolean().optional(),
+        after_cursor: z.string().nullable().optional(),
+        before_cursor: z.string().nullable().optional(),
+      })
+      .passthrough()
+      .optional(),
+    links: z
+      .object({
+        next: z.string().nullable().optional(),
+        prev: z.string().nullable().optional(),
+      })
+      .passthrough()
+      .optional(),
+    count: z.number().int().optional(),
+  })
+  .passthrough();
+
+export type ListTicketsResponse = z.infer<typeof ListTicketsResponseSchema>;
+
+// Search returns mixed result types (tickets, users, organizations); each item
+// carries a `result_type` discriminator.
+export const SearchResultSchema = z
+  .object({
+    result_type: z.string().optional(),
+  })
+  .passthrough();
+
+export const SearchTicketsResponseSchema = z
+  .object({
+    results: z.array(SearchResultSchema),
+    next_page: z.string().nullable().optional(),
+    previous_page: z.string().nullable().optional(),
+    count: z.number().int().optional(),
+  })
+  .passthrough();
+
+export type SearchTicketsResponse = z.infer<typeof SearchTicketsResponseSchema>;
+
+export type ListTicketsResult = {
+  tickets: Ticket[];
+  has_more: boolean;
+  /** Pass back as `cursor` to fetch the next page; null when exhausted. */
+  next_cursor: string | null;
+};
+
+export type SearchTicketsResult = {
+  /** The query actually sent to Zendesk, including the `type:ticket` filter. */
+  query: string;
+  tickets: Ticket[];
+  /** Total matches reported by Zendesk; null when the API omits it. */
+  count: number | null;
+  page: number;
+  has_more: boolean;
+  next_page: number | null;
+};

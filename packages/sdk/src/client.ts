@@ -8,12 +8,23 @@ import type {
   TicketComment,
   ShowTicketResponse,
   ListTicketCommentsResponse,
+  ListTicketsParams,
+  ListTicketsResponse,
+  ListTicketsResult,
+  SearchTicketsParams,
+  SearchTicketsResponse,
+  SearchTicketsResult,
 } from "./types.js";
 import {
   ZendeskConfigSchema,
   ErrorResponseSchema,
   ShowTicketResponseSchema,
   ListTicketCommentsResponseSchema,
+  ListTicketsParamsSchema,
+  ListTicketsResponseSchema,
+  SearchTicketsParamsSchema,
+  SearchTicketsResponseSchema,
+  TicketSchema,
 } from "./types.js";
 import { ZendeskError, ZendeskAuthError } from "./errors.js";
 import { ZodError } from "zod";
@@ -160,4 +171,73 @@ export class ZendeskClient {
 
     return { ticket, comments };
   }
+
+  async listTickets(params: ListTicketsParams = {}): Promise<ListTicketsResult> {
+    const { limit, cursor, sortBy, sortOrder } =
+      ListTicketsParamsSchema.parse(params);
+
+    // Cursor pagination expects a single `sort` value, prefixed for descending.
+    const query = new URLSearchParams({
+      "page[size]": String(limit),
+      sort: `${sortOrder === "desc" ? "-" : ""}${sortBy}`,
+    });
+    if (cursor) query.set("page[after]", cursor);
+
+    const response = await this.request<ListTicketsResponse>(
+      "GET",
+      `/api/v2/tickets.json?${query}`
+    );
+    const parsed = ListTicketsResponseSchema.parse(response);
+    const hasMore = parsed.meta?.has_more ?? false;
+
+    return {
+      tickets: parsed.tickets,
+      has_more: hasMore,
+      next_cursor: hasMore ? parsed.meta?.after_cursor ?? null : null,
+    };
+  }
+
+  async searchTickets(
+    params: SearchTicketsParams
+  ): Promise<SearchTicketsResult> {
+    const { query, limit, page, sortBy, sortOrder } =
+      SearchTicketsParamsSchema.parse(params);
+    const searchQuery = withTicketTypeFilter(query);
+
+    const urlQuery = new URLSearchParams({
+      query: searchQuery,
+      per_page: String(limit),
+      page: String(page),
+      sort_order: sortOrder,
+    });
+    // Omitting sort_by leaves Zendesk on its relevance ordering.
+    if (sortBy !== "relevance") urlQuery.set("sort_by", sortBy);
+
+    const response = await this.request<SearchTicketsResponse>(
+      "GET",
+      `/api/v2/search.json?${urlQuery}`
+    );
+    const parsed = SearchTicketsResponseSchema.parse(response);
+    const tickets = parsed.results
+      .filter((result) => (result.result_type ?? "ticket") === "ticket")
+      .map((result) => TicketSchema.parse(result));
+    const hasMore = Boolean(parsed.next_page);
+
+    return {
+      query: searchQuery,
+      tickets,
+      count: parsed.count ?? null,
+      page,
+      has_more: hasMore,
+      next_page: hasMore ? page + 1 : null,
+    };
+  }
+}
+
+/**
+ * The search endpoint spans tickets, users, and organizations. Scope the query
+ * to tickets unless the caller already named a type.
+ */
+function withTicketTypeFilter(query: string): string {
+  return /\btype:/i.test(query) ? query : `type:ticket ${query}`;
 }
