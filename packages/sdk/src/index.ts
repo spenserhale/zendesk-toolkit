@@ -1,8 +1,38 @@
 export { ZendeskClient } from "./client.js";
-export { resolveConfig } from "./config.js";
+export { resolveConfig, loadConfig, redactedConfig, DEFAULT_BASE_URL } from "./config.js";
+export type {
+  Env,
+  KeychainState,
+  ResolvedConfig,
+  ResolveConfigOptions,
+  LoadConfigOptions,
+  RedactedConfig,
+} from "./config.js";
+export {
+  KEYCHAIN_SERVICE,
+  CREDENTIAL_KEYS,
+  CREDENTIAL_RESOURCES,
+  bunSecretStore,
+  readKeychainValues,
+  resourceCredentialKeys,
+  resourceForCredentialKey,
+} from "./secrets.js";
+export type {
+  SecretStore,
+  CredentialResource,
+  KeychainStatus,
+  KeychainReadResult,
+} from "./secrets.js";
 export { summarizeTicket } from "./summaries.js";
 export type { TicketSummary } from "./summaries.js";
-export { ZendeskError, ZendeskAuthError, ZendeskNotFoundError } from "./errors.js";
+export {
+  ZendeskError,
+  ZendeskAuthError,
+  ZendeskNotFoundError,
+  ZendeskConfigError,
+  ZendeskValidationError,
+} from "./errors.js";
+export type { ZendeskErrorDetails } from "./errors.js";
 export type {
   ZendeskConfig,
   Resource,

@@ -7,15 +7,16 @@ import {
   TICKET_LIST_SORT_FIELDS,
   TICKET_SEARCH_SORT_FIELDS,
   ZendeskClient,
-  resolveConfig,
+  loadConfig,
+  redactedConfig,
   summarizeTicket,
 } from "@zendesk-toolkit/sdk";
 
 const outputFormatSchema = z.enum(["json", "toon"]);
 type OutputFormat = z.infer<typeof outputFormatSchema>;
 
-function getClient(): ZendeskClient {
-  const config = resolveConfig();
+async function getClient(): Promise<ZendeskClient> {
+  const config = await loadConfig();
   return new ZendeskClient(config);
 }
 
@@ -38,6 +39,18 @@ function getCommentBody(comment: TicketComment): string {
 
 export function registerResourceTools(server: FastMCP) {
   server.addTool({
+    name: "get_config_status",
+    description:
+      "Show where the Zendesk credentials and base URL resolve from (env, envfile, keychain) without revealing secrets. Use it to debug authentication setup.",
+    parameters: z.object({}),
+    annotations: { readOnlyHint: true },
+    execute: async () => {
+      const config = redactedConfig(await loadConfig());
+      return JSON.stringify(config, null, 2);
+    },
+  });
+
+  server.addTool({
     name: "list_resources",
     description: "List Zendesk resources with pagination",
     parameters: z.object({
@@ -51,7 +64,7 @@ export function registerResourceTools(server: FastMCP) {
         .describe("Items per page"),
     }),
     execute: async (args) => {
-      const client = getClient();
+      const client = await getClient();
       const result = await client.listResources({
         page: args.page,
         limit: args.limit,
@@ -68,7 +81,7 @@ export function registerResourceTools(server: FastMCP) {
       id: z.string().describe("The resource ID"),
     }),
     execute: async (args) => {
-      const client = getClient();
+      const client = await getClient();
       const resource = await client.getResource(args.id);
       return JSON.stringify(resource, null, 2);
     },
@@ -81,7 +94,7 @@ export function registerResourceTools(server: FastMCP) {
       name: z.string().min(1).describe("Name for the new resource"),
     }),
     execute: async (args) => {
-      const client = getClient();
+      const client = await getClient();
       const resource = await client.createResource({ name: args.name });
       return JSON.stringify(resource, null, 2);
     },
@@ -94,7 +107,7 @@ export function registerResourceTools(server: FastMCP) {
       id: z.string().describe("The resource ID to delete"),
     }),
     execute: async (args) => {
-      const client = getClient();
+      const client = await getClient();
       await client.deleteResource(args.id);
       return `Successfully deleted resource ${args.id}`;
     },
@@ -110,7 +123,7 @@ export function registerResourceTools(server: FastMCP) {
         .describe("Output format: json or toon"),
     }),
     execute: async (args) => {
-      const client = getClient();
+      const client = await getClient();
       const ticket = await client.getTicket(args.id);
 
       const ticketDetails = {
@@ -141,7 +154,7 @@ export function registerResourceTools(server: FastMCP) {
         .describe("Output format: json or toon"),
     }),
     execute: async (args) => {
-      const client = getClient();
+      const client = await getClient();
       const [ticket, comments] = await Promise.all([
         client.getTicket(args.id),
         client.getTicketComments(args.id),
@@ -195,7 +208,7 @@ export function registerResourceTools(server: FastMCP) {
         .describe("Output format: json or toon"),
     }),
     execute: async (args) => {
-      const client = getClient();
+      const client = await getClient();
       const result = await client.listTickets({
         limit: args.limit,
         cursor: args.cursor,
@@ -242,7 +255,7 @@ export function registerResourceTools(server: FastMCP) {
         .describe("Output format: json or toon"),
     }),
     execute: async (args) => {
-      const client = getClient();
+      const client = await getClient();
       const result = await client.searchTickets({
         query: args.query,
         limit: args.limit,

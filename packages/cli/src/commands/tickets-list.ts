@@ -4,7 +4,7 @@ import {
   SORT_ORDERS,
   TICKET_LIST_SORT_FIELDS,
   ZendeskClient,
-  resolveConfig,
+  loadConfig,
   summarizeTicket,
 } from "@zendesk-toolkit/sdk";
 import type { SortOrder } from "@zendesk-toolkit/sdk";
@@ -58,7 +58,7 @@ export const ticketsListCommand = buildCommand({
     },
   },
   async func(this: void, flags: ListFlags) {
-    const config = resolveConfig();
+    const config = await loadConfig();
     const client = new ZendeskClient(config);
 
     try {

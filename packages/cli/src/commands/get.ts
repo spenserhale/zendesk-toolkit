@@ -1,6 +1,6 @@
 import { encode } from "@toon-format/toon";
 import { buildCommand } from "@stricli/core";
-import { ZendeskClient, resolveConfig } from "@zendesk-toolkit/sdk";
+import { ZendeskClient, loadConfig } from "@zendesk-toolkit/sdk";
 
 interface GetFlags {
   readonly json: boolean;
@@ -29,7 +29,7 @@ export const getCommand = buildCommand({
     },
   },
   async func(this: void, flags: GetFlags, id: string) {
-    const config = resolveConfig();
+    const config = await loadConfig();
     const client = new ZendeskClient(config);
 
     try {

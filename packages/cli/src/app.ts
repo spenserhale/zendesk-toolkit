@@ -5,6 +5,9 @@ import { commentsCommand } from "./commands/comments.js";
 import { ticketsListCommand } from "./commands/tickets-list.js";
 import { ticketsSearchCommand } from "./commands/tickets-search.js";
 import { upgradeCommand } from "./commands/upgrade.js";
+import { authRoutes } from "./commands/auth/index.js";
+import { configShowCommand } from "./commands/config-show.js";
+import { agentContextCommand } from "./commands/agent-context.js";
 
 const ticketRoutes = buildRouteMap({
   routes: {
@@ -18,9 +21,21 @@ const ticketRoutes = buildRouteMap({
   },
 });
 
+const configRoutes = buildRouteMap({
+  routes: {
+    show: configShowCommand,
+  },
+  docs: {
+    brief: "Inspect the resolved configuration (secrets redacted)",
+  },
+});
+
 const routes = buildRouteMap({
   routes: {
     tickets: ticketRoutes,
+    auth: authRoutes,
+    config: configRoutes,
+    "agent-context": agentContextCommand,
     upgrade: upgradeCommand,
   },
   docs: {

@@ -1,7 +1,7 @@
 import { encode } from "@toon-format/toon";
 import { buildCommand } from "@stricli/core";
 import type { TicketComment } from "@zendesk-toolkit/sdk";
-import { ZendeskClient, resolveConfig } from "@zendesk-toolkit/sdk";
+import { ZendeskClient, loadConfig } from "@zendesk-toolkit/sdk";
 
 interface CommentsFlags {
   readonly json: boolean;
@@ -39,7 +39,7 @@ export const commentsCommand = buildCommand({
     },
   },
   async func(this: void, flags: CommentsFlags, id: string) {
-    const config = resolveConfig();
+    const config = await loadConfig();
     const client = new ZendeskClient(config);
 
     try {

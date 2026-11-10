@@ -1,5 +1,5 @@
 import { buildCommand } from "@stricli/core";
-import { ZendeskClient, resolveConfig } from "@zendesk-toolkit/sdk";
+import { ZendeskClient, loadConfig } from "@zendesk-toolkit/sdk";
 
 interface CreateFlags {
   readonly json: boolean;
@@ -28,7 +28,7 @@ export const createCommand = buildCommand({
     },
   },
   async func(this: void, flags: CreateFlags, name: string) {
-    const config = resolveConfig();
+    const config = await loadConfig();
     const client = new ZendeskClient(config);
 
     try {

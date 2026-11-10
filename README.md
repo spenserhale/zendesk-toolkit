@@ -23,6 +23,18 @@ zendesk upgrade
 zendesk upgrade --check
 ```
 
+## SDK
+
+```ts
+import { loadConfig, ZendeskClient } from "@zendesk-toolkit/sdk";
+
+// env > .env > OS keychain (Bun only) > default
+const client = new ZendeskClient(await loadConfig());
+```
+
+`resolveConfig()` stays synchronous and skips the keychain; `loadConfig({ secretStore: null })`
+does the same asynchronously.
+
 ## Packages
 
 | Package | Description |
@@ -47,17 +59,36 @@ bun run dev:cli -- --help
 bun run dev:mcp
 ```
 
-Set these environment variables before running ticket commands:
+### Credentials
+
+Store the API key once in the OS keychain (macOS Keychain, Linux libsecret, Windows
+Credential Manager). The CLI and the MCP server both read it, with no `.env` and no
+MCP `env` block:
 
 ```bash
-# Either OAuth token OR Zendesk API token credentials:
-# OAuth: "your-oauth-access-token"
-# API token: "you@example.com/token:your_api_token"
-export ZENDESK_API_KEY=you@example.com/token:your_api_token
+zendesk auth set zendesk                       # hidden prompt
+pbpaste | zendesk auth set zendesk --stdin     # non-interactive
+op read 'op://Private/Zendesk/credential' | zendesk auth set zendesk --stdin
+zendesk auth list                              # keychain state + active source, never values
+zendesk auth migrate --dry-run                 # move a plaintext .env key into the keychain
+zendesk config show                            # resolved config, secrets redacted
+```
+
+`ZENDESK_API_KEY` is either an OAuth access token or `you@example.com/token:<api_token>`.
+`ZENDESK_BASE_URL` is ordinary config:
+
+```bash
 export ZENDESK_BASE_URL=https://your-subdomain.zendesk.com
 # Optional when running from a different working directory:
-export ZENDESK_DOTENV_PATH=/Users/spenser/Code/Toolkits/zendesk-toolkit/.env
+export ZENDESK_DOTENV_PATH=/path/to/zendesk-toolkit/.env
 ```
+
+Precedence: process env > `ZENDESK_DOTENV_PATH` / nearest `.env.local`, `.env` > OS keychain
+> default. Set `ZENDESK_KEYCHAIN=0` to skip the keychain. See
+[docs/guides/configuration.md](./docs/guides/configuration.md) and
+[docs/guides/security.md](./docs/guides/security.md).
+
+Agents can read the full command schema with `zendesk agent-context`.
 
 Ticket CLI commands:
 
